@@ -78,15 +78,11 @@ public class PowerUsageFeatureProviderGoogleImpl extends PowerUsageFeatureProvid
                     }
                 }
                 Estimate estimate = new Estimate(query.getLong(query.getColumnIndex(BATTERY_ESTIMATE_COL)), z2, j);
-                if (query != null) {
-                    query.close();
-                }
+                cleanupCursor(query);
                 return estimate;
             }
         }
-        if (query != null) {
-            query.close();
-        }
+        cleanupCursor(query);
         return null;
     }
 
@@ -94,10 +90,8 @@ public class PowerUsageFeatureProviderGoogleImpl extends PowerUsageFeatureProvid
     public SparseIntArray getEnhancedBatteryPredictionCurve(Context context, long j) {
         Cursor query = context.getContentResolver().query(getEnhancedBatteryPredictionCurveUri(), null, null, null, null);
         try {
-            if (query == null) {
-                if (query != null) {
-                    query.close();
-                }
+            if (query == null || !query.moveToFirst()) {
+                cleanupCursor(query);
                 return null;
             }
             int columnIndex = query.getColumnIndex(TIMESTAMP_COL);
@@ -106,13 +100,12 @@ public class PowerUsageFeatureProviderGoogleImpl extends PowerUsageFeatureProvid
             while (query.moveToNext()) {
                 sparseIntArray.append((int) (query.getLong(columnIndex) - j), query.getInt(columnIndex2));
             }
-            if (query != null) {
-                query.close();
-            }
+            cleanupCursor(query);
             return sparseIntArray;
         } catch (NullPointerException unused) {
-            return null;
         }
+        cleanupCursor(query);
+        return null;
     }
 
     @Override
@@ -165,15 +158,20 @@ public class PowerUsageFeatureProviderGoogleImpl extends PowerUsageFeatureProvid
                 if (1 == query.getInt(query.getColumnIndex(IS_EARLY_WARNING_COL))) {
                     z = true;
                 }
-                if (query != null) {
-                    query.close();
-                }
+                cleanupCursor(query);
                 return z;
             }
         }
-        if (query != null) {
-            query.close();
-        }
+        cleanupCursor(query);
         return false;
     }
+
+    private void cleanupCursor(Cursor query){
+        try {
+            query.close();
+            query = null;
+        }catch (NullPointerException unused) {
+        }
+    }
+
 }
